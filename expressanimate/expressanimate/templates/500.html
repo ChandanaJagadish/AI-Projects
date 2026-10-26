@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Server Error - Flask App{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body text-center p-5">
+                <h1 class="display-1 text-muted">500</h1>
+                <h2 class="card-title">Server Error</h2>
+                <p class="card-text">
+                    Something went wrong on our end. Please try again later.
+                </p>
+                <a href="{{ url_for('home') }}" class="btn btn-primary">
+                    Go Home
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

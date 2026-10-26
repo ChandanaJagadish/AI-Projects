@@ -1,0 +1,10 @@
+{
+    "model_name": "Facenet",
+    "library": "DeepFace",
+    "embedding_size": 128,
+    "threshold": 0.7,
+    "detector_backend": "opencv",
+    "prepared_on": "2026-04-22 19:12:32",
+    "description": "FaceNet pre-trained model loaded via DeepFace. Converts face images into 128-dimensional embeddings. Cosine similarity >= 0.70 means same person.",
+    "status": "ready"
+}

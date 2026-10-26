@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+
+{% block title %}Express Animate - AI Animation Generator{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-body text-center p-5">
+                <h1 class="card-title display-4 mb-4">🎬 Express Animate</h1>
+                <p class="card-text lead mb-4">
+                    Transform your ideas into animated videos with AI in seconds!
+                </p>
+                
+                <!-- Animation Generation Form -->
+                <div class="row justify-content-center">
+                    <div class="col-md-8">
+                        <div class="mb-4">
+                            <label for="promptInput" class="form-label h5">Describe your animation:</label>
+                            <textarea 
+                                class="form-control form-control-lg" 
+                                id="promptInput" 
+                                rows="4" 
+                                placeholder="Example: A funny cartoon of a dog and a cat racing to catch a falling sandwich in a sunny park..."
+                                maxlength="500"></textarea>
+                            <div class="form-text">Be descriptive! Include characters, setting, and action.</div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="durationSelect" class="form-label">Duration:</label>
+                                <select class="form-select" id="durationSelect">
+                                    <option value="5">5 seconds</option>
+                                    <option value="10" selected>10 seconds</option>
+                                    <option value="15">15 seconds</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="styleSelect" class="form-label">Style:</label>
+                                <select class="form-select" id="styleSelect">
+                                    <option value="cartoon">Cartoon</option>
+                                    <option value="anime">Anime</option>
+                                    <option value="cinematic">Cinematic</option>
+                                    <option value="sketch">Sketch</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <button 
+                            class="btn btn-primary btn-lg px-5 py-3" 
+                            id="generateBtn" 
+                            onclick="generateAnimation()">
+                            <span id="generateBtnText">🚀 Generate Animation</span>
+                            <span id="generateSpinner" class="spinner-border spinner-border-sm ms-2 d-none" role="status"></span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Progress Section -->
+                <div id="progressSection" class="mt-5 d-none">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h5 class="card-title">🎭 Creating Your Animation...</h5>
+                            <div class="progress mb-3" style="height: 25px;">
+                                <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                                     role="progressbar" style="width: 0%"></div>
+                            </div>
+                            <p id="progressMessage" class="mb-0">Initializing...</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Result Section -->
+                <div id="resultSection" class="mt-5 d-none">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">🎉 Animation Ready!</h5>
+                            <p class="card-text">Your animated video has been generated successfully.</p>
+                            <div class="mt-3">
+                                <button class="btn btn-light btn-lg me-3" onclick="downloadVideo()">
+                                    📥 Download Video
+                                </button>
+                                <button class="btn btn-outline-light btn-lg" onclick="resetForm()">
+                                    🔄 Create Another
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Error Section -->
+                <div id="errorSection" class="mt-5 d-none">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">❌ Generation Failed</h5>
+                            <p id="errorMessage" class="card-text">Something went wrong.</p>
+                            <button class="btn btn-outline-light" onclick="resetForm()">
+                                🔄 Try Again
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Example Prompts -->
+<div class="row justify-content-center mt-4">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">💡 Example Prompts</h5>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100 bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">🐕 Animal Adventure</h6>
+                                <p class="card-text small">"A brave little mouse riding on the back of a friendly elephant through a magical forest"</p>
+                                <button class="btn btn-sm btn-outline-primary" onclick="useExample(0)">Use This</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100 bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">🚀 Space Story</h6>
+                                <p class="card-text small">"An astronaut floating in space discovers a colorful alien planet with dancing creatures"</p>
+                                <button class="btn btn-sm btn-outline-primary" onclick="useExample(1)">Use This</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100 bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">🏰 Fantasy Tale</h6>
+                                <p class="card-text small">"A young wizard casting colorful spells to help flowers bloom in an enchanted garden"</p>
+                                <button class="btn btn-sm btn-outline-primary" onclick="useExample(2)">Use This</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentJobId = null;
+let statusCheckInterval = null;
+
+const examplePrompts = [
+    "A brave little mouse riding on the back of a friendly elephant through a magical forest",
+    "An astronaut floating in space discovers a colorful alien planet with dancing creatures",
+    "A young wizard casting colorful spells to help flowers bloom in an enchanted garden"
+];
+
+function useExample(index) {
+    document.getElementById('promptInput').value = examplePrompts[index];
+}
+
+async function generateAnimation() {
+    const prompt = document.getElementById('promptInput').value.trim();
+    const duration = parseInt(document.getElementById('durationSelect').value);
+    
+    if (!prompt) {
+        alert('Please enter a description for your animation!');
+        return;
+    }
+    
+    // Reset UI
+    resetSections();
+    
+    // Show loading state
+    const generateBtn = document.getElementById('generateBtn');
+    const generateBtnText = document.getElementById('generateBtnText');
+    const generateSpinner = document.getElementById('generateSpinner');
+    
+    generateBtn.disabled = true;
+    generateBtnText.textContent = 'Generating...';
+    generateSpinner.classList.remove('d-none');
+    
+    // Show progress section
+    document.getElementById('progressSection').classList.remove('d-none');
+    
+    try {
+        const response = await fetch('/api/generate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                prompt: prompt,
+                duration: duration
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            currentJobId = data.job_id;
+            startStatusCheck();
+        } else {
+            throw new Error(data.error || 'Failed to start generation');
+        }
+        
+    } catch (error) {
+        showError(error.message);
+        resetButton();
+    }
+}
+
+function startStatusCheck() {
+    statusCheckInterval = setInterval(checkStatus, 2000); // Check every 2 seconds
+}
+
+async function checkStatus() {
+    if (!currentJobId) return;
+    
+    try {
+        const response = await fetch(`/api/status/${currentJobId}`);
+        const data = await response.json();
+        
+        if (response.ok) {
+            updateProgress(data);
+            
+            if (data.status === 'completed') {
+                clearInterval(statusCheckInterval);
+                showSuccess();
+                resetButton();
+            } else if (data.status === 'failed') {
+                clearInterval(statusCheckInterval);
+                showError(data.message || 'Generation failed');
+                resetButton();
+            }
+        } else {
+            throw new Error(data.error || 'Failed to check status');
+        }
+        
+    } catch (error) {
+        clearInterval(statusCheckInterval);
+        showError(error.message);
+        resetButton();
+    }
+}
+
+function updateProgress(data) {
+    const progressBar = document.getElementById('progressBar');
+    const progressMessage = document.getElementById('progressMessage');
+    
+    progressBar.style.width = `${data.progress}%`;
+    progressBar.textContent = `${data.progress}%`;
+    progressMessage.textContent = data.message;
+}
+
+function showSuccess() {
+    document.getElementById('progressSection').classList.add('d-none');
+    document.getElementById('resultSection').classList.remove('d-none');
+}
+
+function showError(message) {
+    document.getElementById('progressSection').classList.add('d-none');
+    document.getElementById('errorMessage').textContent = message;
+    document.getElementById('errorSection').classList.remove('d-none');
+}
+
+function resetSections() {
+    document.getElementById('progressSection').classList.add('d-none');
+    document.getElementById('resultSection').classList.add('d-none');
+    document.getElementById('errorSection').classList.add('d-none');
+}
+
+function resetButton() {
+    const generateBtn = document.getElementById('generateBtn');
+    const generateBtnText = document.getElementById('generateBtnText');
+    const generateSpinner = document.getElementById('generateSpinner');
+    
+    generateBtn.disabled = false;
+    generateBtnText.textContent = '🚀 Generate Animation';
+    generateSpinner.classList.add('d-none');
+}
+
+function resetForm() {
+    resetSections();
+    resetButton();
+    currentJobId = null;
+    if (statusCheckInterval) {
+        clearInterval(statusCheckInterval);
+    }
+}
+
+async function downloadVideo() {
+    if (!currentJobId) return;
+    
+    try {
+        const response = await fetch(`/api/download/${currentJobId}`);
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `express_animate_${currentJobId}.mp4`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } else {
+            const data = await response.json();
+            alert(data.error || 'Failed to download video');
+        }
+    } catch (error) {
+        alert('Failed to download video: ' + error.message);
+    }
+}
+
+// Clean up on page unload
+window.addEventListener('beforeunload', function() {
+    if (statusCheckInterval) {
+        clearInterval(statusCheckInterval);
+    }
+});
+</script>
+{% endblock %}
